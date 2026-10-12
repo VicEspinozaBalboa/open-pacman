@@ -1,6 +1,6 @@
 # SPEC 01 — Cuatro fantasmas con comportamientos distintos
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** Ninguna
 > **Fecha:** 2026-10-12
 > **Objetivo:** Dotar al juego de cuatro fantasmas, cada uno con una estrategia de movimiento propia (cazador, emboscador, aleatorio y patrullero), que salen escalonados de la pen por una puerta de un solo sentido.
