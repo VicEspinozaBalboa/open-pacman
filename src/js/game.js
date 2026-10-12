@@ -45,6 +45,7 @@ function createGame() {
       kind: g.kind,
       releaseAt: GHOST_RELEASE_DELAYS[ g.kind ] || 0,
       mode: 'pen',
+      wp: 0,
     } ) ),
   };
 }
@@ -117,6 +118,68 @@ function movePacman( game ) {
   wrapTunnel( p, width );
 }
 
+// Primer paso del camino mas corto (BFS) desde start hasta target por celdas
+// transitables para un fantasma. Devuelve la direccion inicial o null.
+function bfsFirstDir( grid, start, target ) {
+  const W = grid[ 0 ].length;
+  const H = grid.length;
+  const key = ( x, y ) => y * W + x;
+  if ( start.x === target.x && start.y === target.y ) return null;
+
+  const cameFrom = {};
+  cameFrom[ key( start.x, start.y ) ] = null;
+  const queue = [ { x: start.x, y: start.y } ];
+
+  while ( queue.length ) {
+    const cur = queue.shift();
+    for ( const dir of Object.keys( DIRS ) ) {
+      const d = DIRS[ dir ];
+      let nx = cur.x + d.x;
+      let ny = cur.y + d.y;
+      // Envoltura del tunel.
+      if ( ny === TUNNEL_ROW ) {
+        if ( nx < 0 ) nx += W;
+        else if ( nx >= W ) nx -= W;
+      }
+      if ( nx < 0 || nx >= W || ny < 0 || ny >= H ) continue;
+      // Mismas reglas que canMove para fantasmas.
+      if ( dir === 'down' && grid[ ny ][ nx ] === 3 ) continue;
+      if ( isWall( grid, nx, ny, 'ghost' ) ) continue;
+      const k = key( nx, ny );
+      if ( k in cameFrom ) continue;
+      cameFrom[ k ] = { from: cur, dir };
+      if ( nx === target.x && ny === target.y ) {
+        // Reconstruir el primer paso del camino.
+        let node = { x: nx, y: ny };
+        let meta = cameFrom[ k ];
+        while ( !( meta.from.x === start.x && meta.from.y === start.y ) ) {
+          node = meta.from;
+          meta = cameFrom[ key( node.x, node.y ) ];
+        }
+        return meta.dir;
+      }
+      queue.push( { x: nx, y: ny } );
+    }
+  }
+  return null;
+}
+
+// Elige, entre las direcciones validas, la que minimiza la distancia
+// Manhattan desde la celda siguiente hasta el objetivo (tx,ty).
+function chooseToward( choices, g, tx, ty ) {
+  let best = choices[ 0 ];
+  let bestDist = Infinity;
+  for ( const dir of choices ) {
+    const d = DIRS[ dir ];
+    const dist = Math.abs( g.x + d.x - tx ) + Math.abs( g.y + d.y - ty );
+    if ( dist < bestDist ) {
+      bestDist = dist;
+      best = dir;
+    }
+  }
+  return best;
+}
+
 function decideGhost( game, g ) {
   const grid = game.grid;
   const p = game.pacman;
@@ -128,21 +191,31 @@ function decideGhost( game, g ) {
   const choices = options.length ? options : [ '' + OPPOSITE[ g.dir ] ];
 
   if ( g.kind === 'hunter' ) {
-    const px = Math.round( p.x );
-    const py = Math.round( p.y );
-    let best = choices[ 0 ];
-    let bestDist = Infinity;
-    for ( const dir of choices ) {
-      const d = DIRS[ dir ];
-      const nx = g.x + d.x;
-      const ny = g.y + d.y;
-      const dist = Math.abs( nx - px ) + Math.abs( ny - py );
-      if ( dist < bestDist ) {
-        bestDist = dist;
-        best = dir;
-      }
+    // Persigue la celda actual de Pacman.
+    g.dir = chooseToward( choices, g, Math.round( p.x ), Math.round( p.y ) );
+  } else if ( g.kind === 'ambusher' ) {
+    // Apunta a 4 celdas por delante de la direccion de Pacman.
+    const pd = DIRS[ p.dir ] || { x: 0, y: 0 };
+    let tx = Math.round( p.x ) + pd.x * 4;
+    let ty = Math.round( p.y ) + pd.y * 4;
+    tx = Math.max( 0, Math.min( grid[ 0 ].length - 1, tx ) );
+    ty = Math.max( 0, Math.min( grid.length - 1, ty ) );
+    // Si el objetivo cae en muro, usar la celda de Pacman.
+    if ( isWall( grid, tx, ty, 'ghost' ) ) {
+      tx = Math.round( p.x );
+      ty = Math.round( p.y );
     }
-    g.dir = best;
+    g.dir = chooseToward( choices, g, tx, ty );
+  } else if ( g.kind === 'patroller' ) {
+    // Recorre los waypoints en bucle; al llegar a uno, pasa al siguiente.
+    let wp = PATROL_WAYPOINTS[ g.wp % PATROL_WAYPOINTS.length ];
+    if ( g.x === wp.x && g.y === wp.y ) {
+      g.wp = ( g.wp + 1 ) % PATROL_WAYPOINTS.length;
+      wp = PATROL_WAYPOINTS[ g.wp ];
+    }
+    // Ruta real por el laberinto (el greedy se traba en minimos locales).
+    const step = bfsFirstDir( grid, { x: g.x, y: g.y }, wp );
+    g.dir = step || choices[ 0 ];
   } else {
     g.dir = choices[ Math.floor( Math.random() * choices.length ) ];
   }
@@ -203,6 +276,7 @@ function resetPositions( game ) {
     g.y = GHOST_STARTS[ i ].y;
     g.dir = 'up';
     g.mode = 'pen';
+    g.wp = 0;
   } );
 }
 
