@@ -52,11 +52,29 @@ const MAZE = MAZE_STR.map( ( row ) => row.split( '' ).map( parseTile ) );
 const TUNNEL_ROW = 14;
 const PACMAN_START = { x: 13, y: 23 };
 const GHOST_STARTS = [
-  { x: 13, y: 14, kind: 'hunter' }, // dentro de la pen
-  { x: 14, y: 14, kind: 'random' }, // dentro de la pen
+  { x: 13, y: 14, kind: 'hunter' },   // dentro de la pen
+  { x: 14, y: 14, kind: 'ambusher' }, // dentro de la pen
+  { x: 13, y: 13, kind: 'random' },   // dentro de la pen
+  { x: 14, y: 13, kind: 'patroller' }, // dentro de la pen
+];
+
+// Retardos de liberacion en frames (~60fps).
+const GHOST_RELEASE_DELAYS = {
+  hunter: 0,
+  ambusher: 60,
+  random: 120,
+  patroller: 180,
+};
+
+// Ruta fija del patrullero (celdas transitables, en bucle).
+const PATROL_WAYPOINTS = [
+  { x: 1, y: 1 }, { x: 26, y: 1 },
+  { x: 26, y: 29 }, { x: 1, y: 29 },
 ];
 
 window.MAZE = MAZE;
 window.TUNNEL_ROW = TUNNEL_ROW;
 window.PACMAN_START = PACMAN_START;
 window.GHOST_STARTS = GHOST_STARTS;
+window.GHOST_RELEASE_DELAYS = GHOST_RELEASE_DELAYS;
+window.PATROL_WAYPOINTS = PATROL_WAYPOINTS;
