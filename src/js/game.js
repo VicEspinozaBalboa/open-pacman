@@ -73,6 +73,10 @@ function canMove( grid, x, y, dir, actor ) {
   const ty = y + d.y;
   // Tunel: salir por un borde en la fila del tunel siempre es valido.
   if ( ty === TUNNEL_ROW && ( tx < 0 || tx >= grid[ 0 ].length ) ) return true;
+  // Puerta unidireccional: los fantasmas nunca cruzan hacia dentro (abajo).
+  if ( actor === 'ghost' && dir === 'down' && grid[ ty ] && grid[ ty ][ tx ] === 3 ) {
+    return false;
+  }
   return !isWall( grid, tx, ty, actor );
 }
 
@@ -148,6 +152,32 @@ function moveGhost( game, g ) {
   const grid = game.grid;
   const width = grid[ 0 ].length;
 
+  // En la pen: espera quieto hasta su turno de liberacion.
+  if ( g.mode === 'pen' ) {
+    if ( game.frame >= g.releaseAt ) g.mode = 'exiting';
+    else return;
+  }
+
+  // Saliendo: sube en linea recta hasta cruzar la puerta (y <= 11).
+  if ( g.mode === 'exiting' ) {
+    if ( aligned( g.x ) && aligned( g.y ) ) {
+      g.x = Math.round( g.x );
+      g.y = Math.round( g.y );
+      if ( g.y <= 11 ) {
+        g.mode = 'active';
+      } else {
+        g.dir = 'up';
+        if ( !canMove( grid, g.x, g.y, g.dir, 'ghost' ) ) return;
+      }
+    }
+    const de = DIRS[ g.dir ];
+    g.x += de.x * g.speed;
+    g.y += de.y * g.speed;
+    wrapTunnel( g, width );
+    return;
+  }
+
+  // Activo: estrategia segun kind.
   if ( aligned( g.x ) && aligned( g.y ) ) {
     g.x = Math.round( g.x );
     g.y = Math.round( g.y );
