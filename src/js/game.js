@@ -321,13 +321,24 @@ function update( game ) {
 
   for ( const g of game.ghosts ) {
     if ( collides( game.pacman, g ) ) {
-      game.lives--;
-      if ( game.lives <= 0 ) {
-        game.state = 'lost';
-        return;
+      if ( game.powerTimer > 0 ) {
+        game.score += 200;
+        const i = game.ghosts.indexOf( g );
+        g.x = GHOST_STARTS[ i ].x;
+        g.y = GHOST_STARTS[ i ].y;
+        g.dir = 'up';
+        g.mode = 'pen';
+        g.wp = 0;
+        g.releaseAt = game.frame;
+      } else {
+        game.lives--;
+        if ( game.lives <= 0 ) {
+          game.state = 'lost';
+          return;
+        }
+        resetPositions( game );
+        break;
       }
-      resetPositions( game );
-      break;
     }
   }
 
