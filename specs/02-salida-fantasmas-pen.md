@@ -1,6 +1,6 @@
 # SPEC 02 — Salida limpia de los fantasmas de la pen
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** SPEC 01
 > **Fecha:** 2026-10-13
 > **Objetivo:** Corregir la transición `exiting` → `active` para que, al liberarse, cada fantasma entre en la fila 11 del laberinto y arranque su estrategia sin atravesar muros ni quedar atascado.
@@ -40,12 +40,12 @@ Convenciones (sin cambios): la fila 11 (`y = 11`) es el primer pasillo transitab
 
 ## Acceptance criteria
 
-- [ ] La consola no muestra errores al cargar ni al jugar.
-- [ ] Al liberarse, ningún fantasma ocupa una celda de muro (valor `1`) en ningún frame.
-- [ ] Los 4 fantasmas alcanzan la fila 11 (`y = 11`) al salir y pasan a `mode: 'active'`.
-- [ ] Al quedar activos, cada fantasma arranca su estrategia sin quedarse detenido en `(x, 11)`.
-- [ ] Se mantiene la espera escalonada (~0/60/120/180 frames) y la salida recta por la puerta.
-- [ ] Tras perder una vida, los fantasmas vuelven a la pen, se re-escalonan y vuelven a salir limpio.
+- [x] La consola no muestra errores al cargar ni al jugar.
+- [x] Al liberarse, ningún fantasma ocupa una celda de muro (valor `1`) en ningún frame.
+- [x] Los 4 fantasmas alcanzan la fila 11 (`y = 11`) al salir y pasan a `mode: 'active'`.
+- [x] Al quedar activos, cada fantasma arranca su estrategia sin quedarse detenido en `(x, 11)`.
+- [x] Se mantiene la espera escalonada (~0/60/120/180 frames) y la salida recta por la puerta.
+- [x] Tras perder una vida, los fantasmas vuelven a la pen, se re-escalonan y vuelven a salir limpio.
 
 ## Decisions
 
