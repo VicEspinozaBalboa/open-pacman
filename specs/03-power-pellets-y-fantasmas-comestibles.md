@@ -1,6 +1,6 @@
 # SPEC 03 — Cuatro power pellets y fantasmas comestibles durante 15 segundos
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** SPEC 01, SPEC 02
 > **Fecha:** 2026-10-13
 > **Objetivo:** Añadir cuatro power pellets en las cuatro esquinas del laberinto: al comerlos, Pacman entra en modo "asustado" durante 15 segundos (~900 frames) durante los cuales puede comer a los fantasmas; estos, al ser comidos, vuelven a la pen y salen de inmediato.
