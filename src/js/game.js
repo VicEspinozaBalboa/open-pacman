@@ -21,7 +21,7 @@ function createGame() {
   grid[ PACMAN_START.y ][ PACMAN_START.x ] = 0;
 
   let dots = 0;
-  for ( const row of grid ) for ( const v of row ) if ( v === 2 ) dots++;
+  for ( const row of grid ) for ( const v of row ) if ( v === 2 || v === 4 ) dots++;
 
   return {
     state: 'start',
@@ -29,6 +29,7 @@ function createGame() {
     lives: 3,
     frame: 0,
     dotsRemaining: dots,
+    powerTimer: 0,
     grid,
     pacman: {
       x: PACMAN_START.x,
@@ -102,10 +103,14 @@ function movePacman( game ) {
       p.dir = p.nextDir;
       p.nextDir = null;
     }
-    // Comer dot.
+    // Comer dot o power pellet.
     if ( grid[ p.y ][ p.x ] === 2 ) {
       grid[ p.y ][ p.x ] = 0;
       game.score += 10;
+      game.dotsRemaining--;
+    } else if ( grid[ p.y ][ p.x ] === 4 ) {
+      grid[ p.y ][ p.x ] = 0;
+      game.powerTimer = 900;
       game.dotsRemaining--;
     }
     // Si no puede seguir, se detiene en la celda.
@@ -180,6 +185,22 @@ function chooseToward( choices, g, tx, ty ) {
   return best;
 }
 
+// Elige, entre las direcciones validas, la que maximiza la distancia
+// Manhattan desde la celda siguiente hasta Pacman (huida).
+function chooseAway( choices, g, tx, ty ) {
+  let best = choices[ 0 ];
+  let bestDist = -Infinity;
+  for ( const dir of choices ) {
+    const d = DIRS[ dir ];
+    const dist = Math.abs( g.x + d.x - tx ) + Math.abs( g.y + d.y - ty );
+    if ( dist > bestDist ) {
+      bestDist = dist;
+      best = dir;
+    }
+  }
+  return best;
+}
+
 function decideGhost( game, g ) {
   const grid = game.grid;
   const p = game.pacman;
@@ -189,6 +210,11 @@ function decideGhost( game, g ) {
   );
   // Sin salida (callejon): permitir el giro de 180.
   const choices = options.length ? options : [ '' + OPPOSITE[ g.dir ] ];
+
+  if ( game.powerTimer > 0 ) {
+    g.dir = chooseAway( choices, g, Math.round( p.x ), Math.round( p.y ) );
+    return;
+  }
 
   if ( g.kind === 'hunter' ) {
     // Persigue la celda actual de Pacman.
@@ -273,6 +299,7 @@ function resetPositions( game ) {
   p.dir = 'left';
   p.nextDir = null;
   game.frame = 0;
+  game.powerTimer = 0;
   game.ghosts.forEach( ( g, i ) => {
     g.x = GHOST_STARTS[ i ].x;
     g.y = GHOST_STARTS[ i ].y;
@@ -288,18 +315,30 @@ function collides( a, b ) {
 
 function update( game ) {
   game.frame++;
+  if ( game.powerTimer > 0 ) game.powerTimer--;
   movePacman( game );
   game.ghosts.forEach( ( g ) => moveGhost( game, g ) );
 
   for ( const g of game.ghosts ) {
     if ( collides( game.pacman, g ) ) {
-      game.lives--;
-      if ( game.lives <= 0 ) {
-        game.state = 'lost';
-        return;
+      if ( game.powerTimer > 0 ) {
+        game.score += 200;
+        const i = game.ghosts.indexOf( g );
+        g.x = GHOST_STARTS[ i ].x;
+        g.y = GHOST_STARTS[ i ].y;
+        g.dir = 'up';
+        g.mode = 'pen';
+        g.wp = 0;
+        g.releaseAt = game.frame;
+      } else {
+        game.lives--;
+        if ( game.lives <= 0 ) {
+          game.state = 'lost';
+          return;
+        }
+        resetPositions( game );
+        break;
       }
-      resetPositions( game );
-      break;
     }
   }
 

@@ -5,6 +5,9 @@ const TILE = 20;
 const WALL_COLOR = '#2121ff';
 const DOOR_COLOR = '#ffb8ff';
 const DOT_COLOR = '#ffb897';
+const POWER_PELLET_COLOR = '#ffb897';
+const SCARED_COLOR = '#2121ff';
+const SCARED_BLINK_COLOR = '#ffffff';
 
 function cellCenter( x, y ) {
   return { cx: x * TILE + TILE / 2, cy: y * TILE + TILE / 2 };
@@ -66,6 +69,19 @@ function drawDoor( ctx, grid ) {
   ctx.stroke();
 }
 
+
+function drawPowerPellets( ctx, grid ) {
+  ctx.fillStyle = POWER_PELLET_COLOR;
+  for ( let y = 0; y < grid.length; y++ ) {
+    for ( let x = 0; x < grid[ 0 ].length; x++ ) {
+      if ( grid[ y ][ x ] !== 4 ) continue;
+      const { cx, cy } = cellCenter( x, y );
+      ctx.beginPath();
+      ctx.arc( cx, cy, 6, 0, Math.PI * 2 );
+      ctx.fill();
+    }
+  }
+}
 function drawDots( ctx, grid ) {
   ctx.fillStyle = DOT_COLOR;
   for ( let y = 0; y < grid.length; y++ ) {
@@ -98,15 +114,24 @@ function drawPacman( ctx, p, frame ) {
   ctx.fill();
 }
 
-function drawGhost( ctx, g, color ) {
+function drawGhost( ctx, g, color, game, frame ) {
   const { cx, cy } = cellCenter( g.x, g.y );
   const r = TILE / 2 - 1;
-  const top = cy - r;
   const bottom = cy + r;
   const left = cx - r;
   const right = cx + r;
 
-  ctx.fillStyle = color;
+  let ghostColor = color;
+  let scared = ( game && game.powerTimer > 0 );
+  if ( scared ) {
+    if ( game.powerTimer <= 120 && Math.floor( frame / 8 ) % 2 === 0 ) {
+      ghostColor = SCARED_BLINK_COLOR;
+    } else {
+      ghostColor = SCARED_COLOR;
+    }
+  }
+
+  ctx.fillStyle = ghostColor;
   ctx.beginPath();
   ctx.arc( cx, cy - 1, r, Math.PI, 0, false ); // cabeza
   ctx.lineTo( right, bottom );
@@ -142,6 +167,10 @@ function drawHUD( ctx, game, W ) {
   ctx.fillText( 'SCORE ' + game.score, 8, 4 );
   ctx.textAlign = 'right';
   ctx.fillText( 'VIDAS ' + game.lives, W * TILE - 8, 4 );
+  const powerSec = Math.floor( ( game.powerTimer || 0 ) / 60 );
+  if ( powerSec > 0 || ( game.powerTimer || 0 ) > 0 ) {
+    ctx.fillText( 'POWER ' + powerSec, W * TILE - 8, 24 );
+  }
 }
 
 const GHOST_COLORS = {
@@ -161,9 +190,10 @@ function draw( ctx, game, frame ) {
 
   drawWalls( ctx, grid );
   drawDoor( ctx, grid );
+  drawPowerPellets( ctx, grid );
   drawDots( ctx, grid );
   drawPacman( ctx, game.pacman, frame );
-  game.ghosts.forEach( ( g ) => drawGhost( ctx, g, GHOST_COLORS[ g.kind ] || '#ff0000' ) );
+  game.ghosts.forEach( ( g ) => drawGhost( ctx, g, GHOST_COLORS[ g.kind ] || '#ff0000', game, frame ) );
   drawHUD( ctx, game, W );
 }
 
