@@ -185,6 +185,22 @@ function chooseToward( choices, g, tx, ty ) {
   return best;
 }
 
+// Elige, entre las direcciones validas, la que maximiza la distancia
+// Manhattan desde la celda siguiente hasta Pacman (huida).
+function chooseAway( choices, g, tx, ty ) {
+  let best = choices[ 0 ];
+  let bestDist = -Infinity;
+  for ( const dir of choices ) {
+    const d = DIRS[ dir ];
+    const dist = Math.abs( g.x + d.x - tx ) + Math.abs( g.y + d.y - ty );
+    if ( dist > bestDist ) {
+      bestDist = dist;
+      best = dir;
+    }
+  }
+  return best;
+}
+
 function decideGhost( game, g ) {
   const grid = game.grid;
   const p = game.pacman;
@@ -194,6 +210,11 @@ function decideGhost( game, g ) {
   );
   // Sin salida (callejon): permitir el giro de 180.
   const choices = options.length ? options : [ '' + OPPOSITE[ g.dir ] ];
+
+  if ( game.powerTimer > 0 ) {
+    g.dir = chooseAway( choices, g, Math.round( p.x ), Math.round( p.y ) );
+    return;
+  }
 
   if ( g.kind === 'hunter' ) {
     // Persigue la celda actual de Pacman.
