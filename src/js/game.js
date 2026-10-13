@@ -29,6 +29,7 @@ function createGame() {
     lives: 3,
     frame: 0,
     dotsRemaining: dots,
+    powerTimer: 0,
     grid,
     pacman: {
       x: PACMAN_START.x,
@@ -273,6 +274,7 @@ function resetPositions( game ) {
   p.dir = 'left';
   p.nextDir = null;
   game.frame = 0;
+  game.powerTimer = 0;
   game.ghosts.forEach( ( g, i ) => {
     g.x = GHOST_STARTS[ i ].x;
     g.y = GHOST_STARTS[ i ].y;
@@ -288,6 +290,7 @@ function collides( a, b ) {
 
 function update( game ) {
   game.frame++;
+  if ( game.powerTimer > 0 ) game.powerTimer--;
   movePacman( game );
   game.ghosts.forEach( ( g ) => moveGhost( game, g ) );
 
