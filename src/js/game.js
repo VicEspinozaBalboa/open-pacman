@@ -238,6 +238,8 @@ function moveGhost( game, g ) {
       g.y = Math.round( g.y );
       if ( g.y <= 11 ) {
         g.mode = 'active';
+        decideGhost( game, g );
+        return;
       } else {
         g.dir = 'up';
         if ( !canMove( grid, g.x, g.y, g.dir, 'ghost' ) ) return;
